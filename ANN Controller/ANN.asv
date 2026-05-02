@@ -1,0 +1,58 @@
+clc; 
+
+%% ===================== LOAD DATA =====================
+data = readmatrix('data.csv');
+
+X = data(:,1:6);      % Inputs
+y = data(:,7);        % Output class (0–7)
+
+
+%% ===================== ONE-HOT ENCODING =====================
+N = size(y,1);
+Y = zeros(N,8);
+
+for i = 1:N
+    Y(i, y(i)+1) = 1;
+end
+
+%% ===================== TRAIN / VALIDATION SPLIT =====================
+rng(1);
+idx = randperm(N);
+nTrain = floor(0.8*N);
+
+Xtrain = Xn(idx(1:nTrain), :)';
+Ytrain = Y(idx(1:nTrain), :)';
+
+Xval   = Xn(idx(nTrain+1:end), :)';
+Yval   = Y(idx(nTrain+1:end), :)';
+
+%% ===================== ANN DEFINITION =====================
+net = patternnet([64 64]);
+
+net.performFcn = 'crossentropy';
+net.trainFcn   = 'trainscg';
+net.divideFcn  = 'divideind';
+
+net.divideParam.trainInd = 1:size(Xtrain,2);
+net.divideParam.valInd   = [];
+net.divideParam.testInd  = [];
+
+net.layers{1}.transferFcn = 'poslin';
+net.layers{2}.transferFcn = 'poslin';
+net.layers{3}.transferFcn = 'softmax';
+
+%% ===================== TRAIN ANN =====================
+net = train(net, Xtrain, Ytrain);
+
+%% ===================== VALIDATION ACCURACY =====================
+Ypred = net(Xval);
+
+[~, predClass] = max(Ypred, [], 1);
+[~, trueClass] = max(Yval, [], 1);
+
+accuracy = mean(predClass == trueClass) * 100;
+fprintf('\nValidation Accuracy: %.2f %%\n', accuracy);
+
+%% ===================== SAVE FOR SIMULINK =====================
+save('trained_ann.mat','net','mu','sigma');
+disp('trained_ann.mat saved successfully');

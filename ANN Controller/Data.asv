@@ -1,0 +1,26 @@
+clc;
+
+% Inputs
+input = [Iq, Iq_Ref, Id, sin(theta(:,1)), cos(theta(:,1))]; % accuracy 
+
+% Convert logical outputs to double and ensure column vectors
+Sa_d = double(Sa(:));
+Sb_d = double(Sb(:));
+Sc_d = double(Sc(:));
+
+% Create output matrix properly
+output = [Sa_d, Sb_d, Sc_d];
+
+% Weighted switching state (binary → decimal)
+y = 4*Sa_d + 2*Sb_d + Sc_d;
+
+% Final dataset
+data = [input, y];
+
+% Verify sin^2 + cos^2 = 1
+x = input(:,5).^2 + input(:,4).^2;
+tol = 1e-6;
+count = sum(abs(x - 1) < tol);
+
+% Write CSV
+writematrix(data, "data.csv");
